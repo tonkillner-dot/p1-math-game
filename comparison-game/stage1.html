@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="ด่าน 1: ลากเส้นจับคู่ — ฝึกการนับและเปรียบเทียบว่าเท่ากันหรือไม่">
+  <title>ด่าน 1: จับคู่ | เปรียบเทียบจำนวน</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .match-area-wrap {
+      position: relative;
+      width: 100%;
+      background: var(--bg-card);
+      border: 3px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .match-col-left  { align-items: flex-end; }
+    .match-col-right { align-items: flex-start; }
+    .match-item {
+      font-size: clamp(22px, 8vw, 30px);
+      min-height: 52px;
+      width: 100%;
+    }
+    .question-prompt {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(9px, 3vw, 13px);
+      color: var(--text-main);
+      text-align: center;
+      line-height: 1.8;
+      margin: 12px 0;
+    }
+    .equal-choices {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+      margin: 12px 0;
+    }
+    .equal-choices .btn-pixel {
+      flex: 1; min-width: 120px; max-width: 200px;
+      font-size: clamp(9px, 3.5vw, 13px);
+    }
+    #svgLines {
+      position: absolute;
+      inset: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 15;
+    }
+  </style>
+</head>
+<body>
+
+<a href="index.html" class="back-btn" onclick="SFX.click()">◄ กลับ</a>
+<div class="stars" id="stars"></div>
+
+<div class="screen" id="mainScreen">
+
+  <div style="height:36px"></div>
+
+  <!-- Title -->
+  <div class="game-title pixel-font" style="font-size:clamp(10px,3.5vw,14px); margin-bottom:4px;">
+    🔗 ด่าน 1: จับคู่!
+  </div>
+  <div class="game-subtitle pixel-font" style="font-size:clamp(7px,2.5vw,10px); margin-bottom:8px;">
+    ลากเส้นจับคู่สิ่งของ
+  </div>
+
+  <!-- Progress -->
+  <div class="pixel-panel" style="padding:10px 14px; margin-bottom:10px;">
+    <div class="score-row">
+      <span class="score-label">คะแนน: <span id="scoreDisplay">0</span></span>
+      <span id="questionCounter" class="question-counter">ข้อ 1 / 10</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Instruction -->
+  <div class="question-prompt" id="instruction">
+    แตะสิ่งของด้านซ้าย แล้วแตะสิ่งของด้านขวาเพื่อจับคู่ 🖐️
+  </div>
+
+  <!-- Match Area -->
+  <div class="match-area-wrap" id="matchAreaWrap">
+    <svg id="svgLines"></svg>
+    <div class="match-area" id="matchArea">
+      <div class="match-col match-col-left"  id="colLeft"></div>
+      <div class="match-col match-col-right" id="colRight"></div>
+    </div>
+  </div>
+
+  <!-- Equal / Not Equal question (hidden initially) -->
+  <div id="equalSection" style="display:none; width:100%;">
+    <hr class="divider">
+    <div class="question-prompt">
+      🤔 กลุ่มซ้ายและขวา...
+    </div>
+    <div class="equal-choices">
+      <button class="btn-pixel green" id="btnEqual"   onclick="answerEqual(true)">เท่ากัน ✓</button>
+      <button class="btn-pixel"       id="btnNotEqual" onclick="answerEqual(false)">ไม่เท่ากัน ✗</button>
+    </div>
+  </div>
+
+  <!-- Check button -->
+  <div style="margin-top:14px; width:100%; display:flex; justify-content:center;" id="checkRow">
+    <button class="btn-pixel blue" id="checkBtn" onclick="checkMatching()" style="display:none;">
+      ✅ เช็คคำตอบ
+    </button>
+  </div>
+
+</div>
+
+<!-- Credit -->
+<div class="credit-footer">สร้างโดย ครูนภรัฐ</div>
+
+<script src="game-common.js"></script>
+<script>
+/* ── State ── */
+const TOTAL_Q   = 10;
+let currentQ    = 0;
+let score       = 0;
+let leftSel     = null;   // index of selected left item
+let pairs       = [];     // [{left, right}] matched pairs
+let leftCount   = 0;
+let rightCount  = 0;
+let leftEmoji   = '';
+let rightEmoji  = '';
+let matchingDone = false;
+
+generateStars();
+
+/* ── Build a question ── */
+function buildQuestion() {
+  matchingDone = false;
+  pairs = [];
+  leftSel = null;
+
+  const set = getEmojiSet();
+  // left count 2-5, right count may be same or differ by 1-2
+  leftCount  = randInt(2, 5);
+  const diff = randInt(-2, 2);
+  rightCount = Math.max(1, Math.min(7, leftCount + diff));
+  const areEqual = (leftCount === rightCount);
+
+  leftEmoji  = set.items[randInt(0, set.items.length - 1)];
+  rightEmoji = set.items[randInt(0, set.items.length - 1)];
+  while (rightEmoji === leftEmoji && set.items.length > 1) {
+    rightEmoji = set.items[randInt(0, set.items.length - 1)];
+  }
+
+  // Render
+  const colLeft  = document.getElementById('colLeft');
+  const colRight = document.getElementById('colRight');
+  colLeft.innerHTML  = '';
+  colRight.innerHTML = '';
+
+  for (let i = 0; i < leftCount; i++) {
+    const el = document.createElement('div');
+    el.className   = 'match-item';
+    el.dataset.idx = i;
+    el.dataset.side= 'left';
+    el.textContent = leftEmoji;
+    el.addEventListener('click', () => tapItem('left', i, el));
+    colLeft.appendChild(el);
+  }
+  for (let i = 0; i < rightCount; i++) {
+    const el = document.createElement('div');
+    el.className   = 'match-item';
+    el.dataset.idx = i;
+    el.dataset.side= 'right';
+    el.textContent = rightEmoji;
+    el.addEventListener('click', () => tapItem('right', i, el));
+    colRight.appendChild(el);
+  }
+
+  clearLines();
+  document.getElementById('equalSection').style.display = 'none';
+  document.getElementById('checkBtn').style.display     = 'none';
+  document.getElementById('instruction').textContent    =
+    'แตะสิ่งของด้านซ้าย แล้วแตะสิ่งของด้านขวาเพื่อจับคู่ 🖐️';
+
+  updateProgressBar(currentQ + 1, TOTAL_Q);
+}
+
+/* ── Tap logic ── */
+function tapItem(side, idx, el) {
+  if (matchingDone) return;
+  SFX.select();
+
+  // Check already matched
+  if (el.classList.contains('matched')) return;
+
+  if (side === 'left') {
+    // deselect previous
+    document.querySelectorAll('.match-item.selected').forEach(e => e.classList.remove('selected'));
+    leftSel = idx;
+    el.classList.add('selected');
+  } else {
+    // right tapped — need a left selected
+    if (leftSel === null) return;
+    // check right not already matched
+    if (pairs.find(p => p.right === idx)) return;
+    // check left not already matched
+    if (pairs.find(p => p.left === leftSel)) return;
+
+    pairs.push({ left: leftSel, right: idx });
+    SFX.match();
+
+    // Mark matched
+    const leftEl  = document.querySelector(`#colLeft  .match-item[data-idx="${leftSel}"]`);
+    const rightEl = document.querySelector(`#colRight .match-item[data-idx="${idx}"]`);
+    leftEl.classList.remove('selected');
+    leftEl.classList.add('matched');
+    rightEl.classList.add('matched');
+
+    leftSel = null;
+
+    drawLines();
+    checkIfAllPaired();
+  }
+}
+
+/* ── Draw SVG lines ── */
+function drawLines() {
+  const svg  = document.getElementById('svgLines');
+  const wrap = document.getElementById('matchAreaWrap');
+  const rect = wrap.getBoundingClientRect();
+  svg.innerHTML = '';
+
+  pairs.forEach((p, i) => {
+    const leftEl  = document.querySelector(`#colLeft  .match-item[data-idx="${p.left}"]`);
+    const rightEl = document.querySelector(`#colRight .match-item[data-idx="${p.right}"]`);
+    if (!leftEl || !rightEl) return;
+
+    const lr = leftEl.getBoundingClientRect();
+    const rr = rightEl.getBoundingClientRect();
+
+    const x1 = lr.right  - rect.left;
+    const y1 = lr.top    - rect.top  + lr.height / 2;
+    const x2 = rr.left   - rect.left;
+    const y2 = rr.top    - rect.top  + rr.height / 2;
+
+    const colors = ['#f7c948','#3ddc84','#5b8dd9','#e94560','#cc44ff'];
+    const color  = colors[i % colors.length];
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', color);
+    line.setAttribute('stroke-width', '4');
+    line.setAttribute('stroke-dasharray', '8 4');
+    svg.appendChild(line);
+  });
+}
+
+function clearLines() {
+  document.getElementById('svgLines').innerHTML = '';
+}
+
+/* ── Check if enough pairs to proceed ── */
+function checkIfAllPaired() {
+  const maxPairs = Math.min(leftCount, rightCount);
+  if (pairs.length >= maxPairs) {
+    matchingDone = true;
+    // Show equal question
+    setTimeout(() => {
+      document.getElementById('equalSection').style.display = '';
+      document.getElementById('instruction').textContent = '🤔 ตอนนี้จับคู่หมดแล้ว — สองกลุ่มนี้เท่ากันหรือเปล่า?';
+    }, 400);
+  }
+}
+
+/* ── Answer equal / not equal ── */
+function answerEqual(userSaysEqual) {
+  SFX.click();
+  const reallyEqual = (leftCount === rightCount);
+  const correct     = (userSaysEqual === reallyEqual);
+
+  if (correct) {
+    score++;
+    SFX.correct();
+  } else {
+    SFX.wrong();
+  }
+
+  const correctAnswer = reallyEqual
+    ? `เท่ากัน! ทั้งสองกลุ่มมีข้างละ ${leftCount} ชิ้น`
+    : `ไม่เท่ากัน! ซ้าย ${leftCount} ชิ้น ขวา ${rightCount} ชิ้น`;
+
+  showFeedback(correct,
+    `ถูกต้อง! 🎉<br><span style="font-size:11px">${correctAnswer}</span>`,
+    `ลองอีกครั้ง!<br><span style="font-size:11px">${correctAnswer}</span>`,
+    nextQuestion
+  );
+}
+
+/* ── Next question ── */
+function nextQuestion() {
+  currentQ++;
+  document.getElementById('scoreDisplay').textContent = score;
+  updateProgressBar(currentQ + 1, TOTAL_Q);
+
+  if (currentQ >= TOTAL_Q) {
+    showResult(1, score, TOTAL_Q, 'stage1.html');
+  } else {
+    buildQuestion();
+  }
+}
+
+/* ── Init ── */
+buildQuestion();
+</script>
+</body>
+</html>

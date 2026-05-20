@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="ด่าน 4: สู้บอส! ผู้พิทักษ์ตัวเลข — รวมทุกทักษะการเปรียบเทียบ">
+  <title>ด่าน 4: สู้บอส! | เปรียบเทียบจำนวน</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .battle-scene {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      width: 100%; padding: 8px 0 16px;
+      position: relative;
+    }
+    .fighter-box {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      flex: 1;
+    }
+    .fighter-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(7px, 2.5vw, 9px);
+      color: var(--text-dim);
+    }
+    .hp-section { width: 100%; margin-bottom: 12px; }
+    .hp-row { margin-bottom: 8px; }
+
+    .attack-flash {
+      position: fixed; inset: 0; pointer-events: none; z-index: 200;
+      animation: attackFlash 0.4s ease forwards;
+    }
+    @keyframes attackFlash {
+      0%   { background: #ff006633; }
+      100% { background: transparent; }
+    }
+
+    .boss-hp-text, .player-hp-text {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(7px, 2.5vw, 9px);
+      text-align: right;
+    }
+    .boss-hp-text  { color: #cc44ff; }
+    .player-hp-text{ color: var(--accent); }
+
+    .q-type-badge {
+      display: inline-block;
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(7px, 2.5vw, 9px);
+      background: var(--accent2);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    /* Mixed answer layouts */
+    .ans-grid-2 {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      width: 100%; margin-top: 12px;
+    }
+    .ans-grid-3 {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+      width: 100%; margin-top: 12px;
+    }
+    .ans-grid-2 .btn-pixel,
+    .ans-grid-3 .btn-pixel {
+      font-size: clamp(8px, 3vw, 12px);
+      padding: 12px 6px;
+    }
+    .sym-grid {
+      display: flex; gap: 12px; justify-content: center; margin-top: 12px;
+    }
+    .sym-grid .symbol-btn {
+      width: clamp(64px, 20vw, 78px);
+      height: clamp(64px, 20vw, 78px);
+      font-size: clamp(22px, 9vw, 32px);
+    }
+
+    .dmg-popup {
+      position: fixed;
+      pointer-events: none;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 22px;
+      color: #ff6b8a;
+      text-shadow: 2px 2px 0 #000;
+      z-index: 300;
+      animation: dmgFloat 0.8s ease forwards;
+    }
+    .dmg-popup.heal { color: #3ddc84; }
+    @keyframes dmgFloat {
+      0%   { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-60px) scale(0.7); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<a href="index.html" class="back-btn" onclick="SFX.click()">◄ กลับ</a>
+<div class="stars" id="stars"></div>
+
+<div class="screen" id="mainScreen">
+
+  <div style="height:36px"></div>
+
+  <!-- Title -->
+  <div class="game-title pixel-font" style="font-size:clamp(9px,3vw,13px); margin-bottom:4px; color:var(--accent2);">
+    🐉 สู้บอส!
+  </div>
+  <div class="game-subtitle pixel-font" style="margin-bottom:8px;">
+    ผู้พิทักษ์ตัวเลข
+  </div>
+
+  <!-- HP Bars -->
+  <div class="pixel-panel hp-section" style="padding:12px 14px;">
+    <div class="hp-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <span class="hp-label">🐉 มังกร</span>
+        <span class="boss-hp-text" id="bossHPText">10 / 10</span>
+      </div>
+      <div class="hp-bar-wrap">
+        <div class="hp-bar-fill enemy" id="bossBar" style="width:100%"></div>
+      </div>
+    </div>
+    <div class="hp-row" style="margin-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <span class="hp-label">🧒 ฉัน</span>
+        <span class="player-hp-text" id="playerHPText">5 / 5</span>
+      </div>
+      <div class="hp-bar-wrap">
+        <div class="hp-bar-fill" id="playerBar" style="width:100%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Battle Scene -->
+  <div class="battle-scene">
+    <div class="fighter-box">
+      <div class="player-sprite" id="playerSprite">🧒</div>
+      <div class="fighter-name">ผู้เล่น</div>
+    </div>
+
+    <div style="font-family:'Press Start 2P',monospace;font-size:14px;color:var(--border);padding-bottom:20px;">
+      ⚔️
+    </div>
+
+    <div class="fighter-box">
+      <div class="dragon-sprite" id="dragonSprite">🐉</div>
+      <div class="fighter-name">มังกร</div>
+    </div>
+  </div>
+
+  <!-- Question -->
+  <div class="question-box" id="questionBox">
+    <div id="qTypeBadge" class="q-type-badge">คำถาม</div>
+    <div class="question-text" id="qText">กำลังโหลด...</div>
+    <!-- dynamic content here -->
+    <div id="qExtra" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- Answers -->
+  <div id="answersArea"></div>
+
+  <!-- Progress -->
+  <div style="margin-top:12px; text-align:center;">
+    <span id="questionCounter" class="question-counter" style="font-size:clamp(8px,2.5vw,10px)">ข้อ 1 / 8</span>
+    <div class="progress-bar-wrap" style="margin-top:6px;">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Credit -->
+<div class="credit-footer">สร้างโดย ครูนภรัฐ</div>
+
+<script src="game-common.js"></script>
+<script>
+const TOTAL_Q   = 8;
+const BOSS_MAX  = 10;
+const PLAYER_MAX = 5;
+let currentQ    = 0;
+let score       = 0;
+let bossHP      = BOSS_MAX;
+let playerHP    = PLAYER_MAX;
+let answered    = false;
+
+// Question type pool: equal_check, compare_more, compare_sym
+const Q_TYPES = ['equal_check','compare_more','compare_sym','compare_sym','compare_more','equal_check','compare_sym','compare_more'];
+
+generateStars();
+
+/* ── HP update ── */
+function updateBars() {
+  document.getElementById('bossBar').style.width   = Math.max(0,(bossHP/BOSS_MAX*100))+'%';
+  document.getElementById('playerBar').style.width = Math.max(0,(playerHP/PLAYER_MAX*100))+'%';
+  document.getElementById('bossHPText').textContent   = `${Math.max(0,bossHP)} / ${BOSS_MAX}`;
+  document.getElementById('playerHPText').textContent = `${Math.max(0,playerHP)} / ${PLAYER_MAX}`;
+}
+
+function showDmgPopup(text, isHeal, targetEl) {
+  const rect = targetEl.getBoundingClientRect();
+  const div  = document.createElement('div');
+  div.className = 'dmg-popup' + (isHeal ? ' heal' : '');
+  div.textContent = text;
+  div.style.left = rect.left + rect.width/2 - 20 + 'px';
+  div.style.top  = rect.top - 10 + 'px';
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 900);
+}
+
+/* ── Build question ── */
+let leftN = 0, rightN = 0;
+let correctSym = '';
+let currentType = '';
+
+function buildQuestion() {
+  answered = false;
+  currentType = Q_TYPES[currentQ % Q_TYPES.length];
+
+  leftN  = randInt(1, 9);
+  const r = randInt(0, 2);
+  if (r === 0) rightN = leftN;
+  else if (r === 1) rightN = Math.max(1, leftN - randInt(1, 4));
+  else rightN = Math.min(9, leftN + randInt(1, 4));
+
+  if (leftN > rightN)      correctSym = '>';
+  else if (leftN < rightN) correctSym = '<';
+  else                     correctSym = '=';
+
+  const qBox     = document.getElementById('qText');
+  const qExtra   = document.getElementById('qExtra');
+  const ansArea  = document.getElementById('answersArea');
+  const badge    = document.getElementById('qTypeBadge');
+  qExtra.innerHTML = '';
+  ansArea.innerHTML = '';
+
+  if (currentType === 'equal_check') {
+    badge.textContent = '🔗 จับคู่';
+    badge.style.background = 'var(--accent4)';
+    qBox.innerHTML = `${leftN} กับ ${rightN}<br>เท่ากันหรือเปล่า?`;
+    qExtra.innerHTML = `
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;font-size:clamp(18px,6vw,28px);">
+        <span>${'🟦'.repeat(leftN)}</span>
+        <span style="color:var(--accent);font-family:'Press Start 2P',monospace;font-size:12px;align-self:center;">VS</span>
+        <span>${'🟥'.repeat(rightN)}</span>
+      </div>`;
+    ansArea.innerHTML = `
+      <div class="ans-grid-2">
+        <button class="btn-pixel green" onclick="answer('equal')">เท่ากัน ✓</button>
+        <button class="btn-pixel"      onclick="answer('notequal')">ไม่เท่ากัน ✗</button>
+      </div>`;
+
+  } else if (currentType === 'compare_more') {
+    badge.textContent = '⚖️ เปรียบเทียบ';
+    badge.style.background = '#2b7a4e';
+    qBox.innerHTML = `ซ้าย: ${leftN} &nbsp; ขวา: ${rightN}<br>กลุ่มไหนมากกว่า?`;
+    // Dot visualization
+    qExtra.innerHTML = `
+      <div style="display:flex;justify-content:space-around;font-size:16px;line-height:2;">
+        <span>${'●'.repeat(leftN)}</span>
+        <span style="color:var(--accent)">VS</span>
+        <span>${'●'.repeat(rightN)}</span>
+      </div>`;
+    ansArea.innerHTML = `
+      <div class="ans-grid-3">
+        <button class="btn-pixel blue"  onclick="answer('left')">ซ้ายมาก</button>
+        <button class="btn-pixel green" onclick="answer('equal')">เท่ากัน</button>
+        <button class="btn-pixel"       onclick="answer('right')">ขวามาก</button>
+      </div>`;
+
+  } else { // compare_sym
+    badge.textContent = '🔣 สัญลักษณ์';
+    badge.style.background = 'var(--accent2)';
+    qBox.textContent = `ใส่สัญลักษณ์ที่ถูกต้อง`;
+    qExtra.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:8px;">
+        <div style="font-family:'Press Start 2P',monospace;font-size:clamp(24px,10vw,36px);color:var(--text-main);text-shadow:3px 3px 0 var(--accent2);">${leftN}</div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:clamp(20px,8vw,28px);color:var(--border);border:3px dashed var(--accent4);padding:8px 12px;border-radius:4px;" id="symSlotBoss">?</div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:clamp(24px,10vw,36px);color:var(--text-main);text-shadow:3px 3px 0 var(--accent4);">${rightN}</div>
+      </div>`;
+    ansArea.innerHTML = `
+      <div class="sym-grid">
+        <button class="symbol-btn btn-pixel blue"  onclick="answer('>')">&gt;</button>
+        <button class="symbol-btn btn-pixel green"  onclick="answer('=')">=</button>
+        <button class="symbol-btn btn-pixel"       onclick="answer('<')">&lt;</button>
+      </div>`;
+  }
+
+  updateProgressBar(currentQ + 1, TOTAL_Q);
+}
+
+/* ── Answer handler ── */
+function answer(choice) {
+  if (answered) return;
+  answered = true;
+  SFX.click();
+
+  // Determine correct
+  let correct = false;
+  if (currentType === 'equal_check') {
+    correct = (leftN === rightN) ? choice === 'equal' : choice === 'notequal';
+  } else if (currentType === 'compare_more') {
+    if (leftN > rightN)      correct = choice === 'left';
+    else if (leftN < rightN) correct = choice === 'right';
+    else                     correct = choice === 'equal';
+  } else {
+    correct = (choice === correctSym);
+    // Update sym slot
+    const slot = document.getElementById('symSlotBoss');
+    if (slot) {
+      slot.textContent = choice;
+      slot.style.borderStyle  = 'solid';
+      slot.style.borderColor  = correct ? 'var(--accent3)' : 'var(--accent2)';
+      slot.style.background   = correct ? '#0d3d1e' : '#3d0d1e';
+    }
+  }
+
+  // Disable all answer buttons
+  document.querySelectorAll('#answersArea button').forEach(b => {
+    b.disabled = true;
+    b.style.opacity = '0.6';
+  });
+
+  if (correct) {
+    score++;
+    bossHP -= 2;
+    SFX.correct();
+    // Dragon hit animation
+    const d = document.getElementById('dragonSprite');
+    d.classList.add('hit');
+    setTimeout(() => d.classList.remove('hit'), 400);
+    showDmgPopup('-2 HP', false, d);
+    // Flash
+    const f = document.createElement('div');
+    f.className = 'attack-flash';
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 400);
+  } else {
+    playerHP -= 1;
+    SFX.hit();
+    const p = document.getElementById('playerSprite');
+    p.classList.add('shake');
+    setTimeout(() => p.classList.remove('shake'), 400);
+    showDmgPopup('-1 HP', false, p);
+  }
+
+  updateBars();
+
+  // Correct text
+  let correctLine = '';
+  if (currentType === 'equal_check') correctLine = leftN === rightN ? 'เท่ากัน!' : 'ไม่เท่ากัน!';
+  else if (currentType === 'compare_more') {
+    if (leftN > rightN) correctLine = `ซ้ายมากกว่า (${leftN} > ${rightN})`;
+    else if (leftN < rightN) correctLine = `ขวามากกว่า (${leftN} < ${rightN})`;
+    else correctLine = `เท่ากัน (${leftN} = ${rightN})`;
+  } else {
+    correctLine = `${leftN} ${correctSym} ${rightN}`;
+  }
+
+  setTimeout(() => {
+    // Check game over conditions
+    if (playerHP <= 0) {
+      showBattleEnd(false);
+    } else if (bossHP <= 0) {
+      showBattleEnd(true);
+    } else {
+      showFeedback(correct,
+        `ถูก! ⚔️ โจมตี -2HP<br><span style="font-size:11px">${correctLine}</span>`,
+        `ผิด! 💥 เสีย 1HP<br><span style="font-size:11px">${correctLine}</span>`,
+        nextQuestion
+      );
+    }
+  }, 500);
+}
+
+function nextQuestion() {
+  currentQ++;
+  document.getElementById('scoreDisplay') && (document.getElementById('scoreDisplay').textContent = score);
+  updateProgressBar(currentQ + 1, TOTAL_Q);
+
+  if (currentQ >= TOTAL_Q) {
+    showBattleEnd(bossHP <= 0 || score >= 6);
+  } else {
+    buildQuestion();
+  }
+}
+
+/* ── Battle End ── */
+function showBattleEnd(win) {
+  setStageData(4, score, TOTAL_Q);
+  const screen = document.querySelector('.screen');
+  if (win) {
+    SFX.victory();
+    screen.innerHTML = `
+      <div class="result-screen" style="padding-top:32px;">
+        <div style="font-size:80px; animation: bounce 0.6s ease infinite alternate;">🏆</div>
+        <div class="result-title" style="color:var(--accent);">ชนะแล้ว!</div>
+        <div style="font-size:48px; margin:8px 0;">🐉💀</div>
+        <div class="result-score">
+          คะแนน ${score} / ${TOTAL_Q}<br><br>
+          <span style="color:var(--accent)">${renderStars(score >= TOTAL_Q ? 3 : score >= 6 ? 2 : 1)}</span>
+        </div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:var(--text-dim);margin:8px 0 20px;">
+          เจ้าเป็นผู้พิทักษ์ตัวเลขตัวจริง!
+        </div>
+        <div class="answer-row">
+          <button class="btn-pixel blue" onclick="window.location.reload()">เล่นอีกครั้ง</button>
+          <button class="btn-pixel green" onclick="window.location.href='index.html'">หน้าหลัก</button>
+        </div>
+      </div>`;
+  } else {
+    SFX.wrong();
+    screen.innerHTML = `
+      <div class="result-screen" style="padding-top:32px;">
+        <div style="font-size:80px;">💀</div>
+        <div class="result-title" style="color:var(--accent2);">พ่ายแล้ว!</div>
+        <div style="font-size:48px; margin:8px 0;">🐉😈</div>
+        <div class="result-score">คะแนน ${score} / ${TOTAL_Q}</div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:var(--text-dim);margin:8px 0 20px;">
+          ฝึกฝนแล้วกลับมาใหม่!
+        </div>
+        <div class="answer-row">
+          <button class="btn-pixel blue" onclick="window.location.reload()">สู้ใหม่!</button>
+          <button class="btn-pixel gray" onclick="window.location.href='index.html'">หน้าหลัก</button>
+        </div>
+      </div>`;
+  }
+}
+
+// Init
+updateBars();
+buildQuestion();
+</script>
+</body>
+</html>

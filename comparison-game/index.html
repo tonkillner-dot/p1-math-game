@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="เกมเปรียบเทียบจำนวน สำหรับนักเรียน ป.1 — ฝึกทักษะการเปรียบเทียบแบบ 8-bit">
+  <title>เปรียบเทียบจำนวน | ป.1</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="screen">
+
+  <!-- Header -->
+  <div class="game-title pixel-font" style="margin-top:16px">
+    🔢 เปรียบเทียบ<br>จำนวน
+  </div>
+  <div class="game-subtitle pixel-font">ป.1 MATH QUEST</div>
+
+  <!-- Player Sprite -->
+  <div style="font-size:52px; margin-bottom:12px; animation: titleFloat 2s ease-in-out infinite alternate;">🧒</div>
+
+  <!-- Stage Map -->
+  <div class="stage-map" id="stageMap">
+    <div class="stage-path"></div>
+
+    <!-- Stage 1 -->
+    <button class="stage-btn" id="stage1Btn" onclick="goStage(1)">
+      <div class="stage-icon">🔗</div>
+      <div class="stage-info">
+        <div class="stage-name">ด่าน 1</div>
+        <div class="stage-desc">ลากเส้นจับคู่<br>เท่ากันหรือเปล่า?</div>
+      </div>
+      <div class="stage-stars" id="stars1">☆☆☆</div>
+    </button>
+
+    <!-- Stage 2 -->
+    <button class="stage-btn" id="stage2Btn" onclick="goStage(2)">
+      <div class="stage-icon">⚖️</div>
+      <div class="stage-info">
+        <div class="stage-name">ด่าน 2</div>
+        <div class="stage-desc">มากกว่า<br>หรือน้อยกว่า?</div>
+      </div>
+      <div class="stage-stars" id="stars2">☆☆☆</div>
+    </button>
+
+    <!-- Stage 3 -->
+    <button class="stage-btn" id="stage3Btn" onclick="goStage(3)">
+      <div class="stage-icon">🔣</div>
+      <div class="stage-info">
+        <div class="stage-name">ด่าน 3</div>
+        <div class="stage-desc">ใส่สัญลักษณ์<br>&gt; &lt; =</div>
+      </div>
+      <div class="stage-stars" id="stars3">☆☆☆</div>
+    </button>
+
+    <!-- Stage 4 -->
+    <button class="stage-btn" id="stage4Btn" onclick="goStage(4)">
+      <div class="stage-icon">🐉</div>
+      <div class="stage-info">
+        <div class="stage-name">ด่าน 4</div>
+        <div class="stage-desc">สู้บอส!<br>ผู้พิทักษ์ตัวเลข</div>
+      </div>
+      <div class="stage-stars" id="stars4">☆☆☆</div>
+    </button>
+
+  </div>
+
+  <!-- About -->
+  <div class="pixel-panel" style="margin-top:24px; text-align:center; max-width:340px;">
+    <div style="font-family:'Press Start 2P',monospace; font-size:8px; color:var(--text-dim); line-height:2;">
+      🎮 วิธีเล่น<br>
+      <span style="font-size:11px; font-family:'Sarabun',sans-serif; color:var(--text-main);">
+        ผ่านด่านทีละด่านเพื่อฝึกการเปรียบเทียบจำนวน ตั้งแต่การจับคู่ จนถึงการใช้สัญลักษณ์
+      </span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Credit -->
+<div class="credit-footer">สร้างโดย ครูนภรัฐ</div>
+
+<script src="game-common.js"></script>
+<script>
+  generateStars();
+
+  function updateUI() {
+    for (let i = 1; i <= 4; i++) {
+      const btn = document.getElementById('stage' + i + 'Btn');
+      const starsEl = document.getElementById('stars' + i);
+      const data = getStageData(i);
+
+      btn.classList.add('unlocked');
+      if (data.completed) btn.classList.add('completed');
+      starsEl.textContent = renderStars(data.stars);
+    }
+  }
+
+  function goStage(n) {
+    if (!isStageUnlocked(n)) {
+      SFX.wrong();
+      return;
+    }
+    SFX.click();
+    const pages = ['stage1.html','stage2.html','stage3.html','stage4.html'];
+    setTimeout(() => { window.location.href = pages[n-1]; }, 120);
+  }
+
+  updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="ด่าน 3: เลือกสัญลักษณ์ที่ถูกต้อง > < = เพื่อแสดงการเปรียบเทียบตัวเลข">
+  <title>ด่าน 3: สัญลักษณ์ > &lt; = | เปรียบเทียบจำนวน</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .num-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 16px; margin: 16px 0;
+    }
+    .num-box {
+      background: var(--bg-card);
+      border: 4px solid var(--border);
+      border-radius: 8px;
+      width: clamp(80px, 25vw, 110px);
+      height: clamp(80px, 25vw, 110px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px;
+      box-shadow: 0 6px 0 #111133;
+    }
+    .num-big {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(28px, 12vw, 48px);
+      color: var(--text-main);
+      text-shadow: 3px 3px 0 var(--accent2);
+      line-height: 1;
+    }
+    .num-emoji { font-size: clamp(16px, 5vw, 24px); }
+    .sym-slot {
+      width: clamp(64px, 20vw, 80px);
+      height: clamp(64px, 20vw, 80px);
+      display: flex; align-items: center; justify-content: center;
+      border: 3px dashed var(--accent4);
+      border-radius: 6px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(28px, 12vw, 44px);
+      color: var(--accent);
+      text-shadow: 2px 2px 0 var(--accent2);
+      transition: all 0.2s;
+      background: #ffffff08;
+    }
+    .sym-slot.filled {
+      border-style: solid;
+      border-color: var(--accent);
+      background: #2a2a5e;
+      animation: symPop 0.2s ease;
+    }
+    @keyframes symPop {
+      from { transform: scale(1.2); }
+      to   { transform: scale(1); }
+    }
+    .symbol-row {
+      display: flex; gap: 14px; justify-content: center;
+      margin: 16px 0; flex-wrap: wrap;
+    }
+    .symbol-btn {
+      width: clamp(70px, 22vw, 90px);
+      height: clamp(70px, 22vw, 90px);
+      font-size: clamp(24px, 10vw, 36px);
+    }
+    .confirm-row {
+      display: flex; gap: 10px; justify-content: center; margin-top: 8px;
+    }
+    .confirm-row .btn-pixel {
+      min-width: 120px;
+    }
+    .dots-preview {
+      display: flex; flex-wrap: wrap; gap: 3px; justify-content: center;
+      max-width: 80px;
+    }
+    .dot {
+      width: 10px; height: 10px;
+      background: var(--accent4);
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+
+<a href="index.html" class="back-btn" onclick="SFX.click()">◄ กลับ</a>
+<div class="stars" id="stars"></div>
+
+<div class="screen" id="mainScreen">
+
+  <div style="height:36px"></div>
+
+  <!-- Title -->
+  <div class="game-title pixel-font" style="font-size:clamp(10px,3.5vw,14px); margin-bottom:4px;">
+    🔣 ด่าน 3: สัญลักษณ์!
+  </div>
+  <div class="game-subtitle pixel-font" style="font-size:clamp(7px,2.5vw,10px); margin-bottom:8px;">
+    เลือก  &gt;  &lt;  =  ให้ถูกต้อง
+  </div>
+
+  <!-- Progress -->
+  <div class="pixel-panel" style="padding:10px 14px; margin-bottom:10px;">
+    <div class="score-row">
+      <span class="score-label">คะแนน: <span id="scoreDisplay">0</span></span>
+      <span id="questionCounter" class="question-counter">ข้อ 1 / 6</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="pixel-panel" style="padding:10px 12px; margin-bottom:10px; font-size:12px; line-height:2; text-align:center;">
+    <span style="color:var(--accent)">></span> = มากกว่า &nbsp;|&nbsp;
+    <span style="color:var(--accent)"><</span> = น้อยกว่า &nbsp;|&nbsp;
+    <span style="color:var(--accent)">=</span> = เท่ากัน
+  </div>
+
+  <!-- Number Display Row -->
+  <div class="num-row">
+    <div class="num-box" id="leftBox">
+      <div class="num-big" id="numLeft">?</div>
+      <div class="dots-preview" id="dotsLeft"></div>
+    </div>
+
+    <div class="sym-slot" id="symSlot">?</div>
+
+    <div class="num-box" id="rightBox">
+      <div class="num-big" id="numRight">?</div>
+      <div class="dots-preview" id="dotsRight"></div>
+    </div>
+  </div>
+
+  <!-- Symbol Buttons -->
+  <div style="text-align:center; font-family:'Press Start 2P',monospace; font-size:clamp(8px,2.5vw,10px); color:var(--text-dim); margin-bottom:8px;">
+    แตะสัญลักษณ์ที่ถูกต้อง
+  </div>
+  <div class="symbol-row">
+    <button class="symbol-btn btn-pixel blue"  id="symGT" onclick="selectSym('>')">&gt;</button>
+    <button class="symbol-btn btn-pixel green"  id="symEQ" onclick="selectSym('=')">=</button>
+    <button class="symbol-btn btn-pixel"       id="symLT" onclick="selectSym('<')">&lt;</button>
+  </div>
+
+  <!-- Confirm -->
+  <div class="confirm-row">
+    <button class="btn-pixel yellow" id="confirmBtn" onclick="confirmAnswer()" disabled style="opacity:0.5;">
+      ✅ ยืนยัน
+    </button>
+    <button class="btn-pixel gray" id="clearBtn" onclick="clearSym()" disabled style="opacity:0.5;">
+      ✗ ล้าง
+    </button>
+  </div>
+
+</div>
+
+<!-- Credit -->
+<div class="credit-footer">สร้างโดย ครูนภรัฐ</div>
+
+<script src="game-common.js"></script>
+<script>
+const TOTAL_Q  = 6;
+let currentQ   = 0;
+let score      = 0;
+let leftN      = 0;
+let rightN     = 0;
+let selectedSym = null;
+let answered   = false;
+
+generateStars();
+
+function buildQuestion() {
+  answered    = false;
+  selectedSym = null;
+
+  // Reset slot
+  const slot = document.getElementById('symSlot');
+  slot.textContent = '?';
+  slot.classList.remove('filled');
+  slot.style.color = '';
+
+  // Reset buttons
+  ['symGT','symEQ','symLT'].forEach(id => {
+    document.getElementById(id).classList.remove('selected');
+    document.getElementById(id).disabled = false;
+    document.getElementById(id).style.opacity = '1';
+  });
+  document.getElementById('confirmBtn').disabled = true;
+  document.getElementById('confirmBtn').style.opacity = '0.5';
+  document.getElementById('clearBtn').disabled = true;
+  document.getElementById('clearBtn').style.opacity = '0.5';
+
+  // Generate numbers
+  leftN  = randInt(1, 9);
+  const r = randInt(0, 2);
+  if (r === 0) rightN = leftN;
+  else if (r === 1) rightN = Math.max(1, leftN - randInt(1, 4));
+  else rightN = Math.min(9, leftN + randInt(1, 4));
+
+  document.getElementById('numLeft').textContent  = leftN;
+  document.getElementById('numRight').textContent = rightN;
+
+  // Render dot previews
+  renderDots('dotsLeft',  leftN);
+  renderDots('dotsRight', rightN);
+
+  updateProgressBar(currentQ + 1, TOTAL_Q);
+}
+
+function renderDots(containerId, n) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  for (let i = 0; i < Math.min(n, 9); i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    el.appendChild(d);
+  }
+}
+
+function selectSym(sym) {
+  if (answered) return;
+  SFX.select();
+  selectedSym = sym;
+
+  // Highlight selected button
+  const idMap = { '>': 'symGT', '=': 'symEQ', '<': 'symLT' };
+  ['symGT','symEQ','symLT'].forEach(id => {
+    document.getElementById(id).classList.remove('selected');
+  });
+  document.getElementById(idMap[sym]).classList.add('selected');
+
+  // Update slot
+  const slot = document.getElementById('symSlot');
+  slot.textContent = sym;
+  slot.classList.add('filled');
+  slot.style.color = sym === '>' ? 'var(--accent4)' : sym === '<' ? 'var(--accent2)' : 'var(--accent3)';
+
+  // Enable confirm
+  document.getElementById('confirmBtn').disabled = false;
+  document.getElementById('confirmBtn').style.opacity = '1';
+  document.getElementById('clearBtn').disabled = false;
+  document.getElementById('clearBtn').style.opacity = '1';
+}
+
+function clearSym() {
+  if (answered) return;
+  SFX.click();
+  selectedSym = null;
+  const slot = document.getElementById('symSlot');
+  slot.textContent = '?';
+  slot.classList.remove('filled');
+  slot.style.color = '';
+  ['symGT','symEQ','symLT'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  document.getElementById('confirmBtn').disabled = true;
+  document.getElementById('confirmBtn').style.opacity = '0.5';
+  document.getElementById('clearBtn').disabled = true;
+  document.getElementById('clearBtn').style.opacity = '0.5';
+}
+
+function confirmAnswer() {
+  if (!selectedSym || answered) return;
+  answered = true;
+  SFX.click();
+
+  let correctSym;
+  if (leftN > rightN)      correctSym = '>';
+  else if (leftN < rightN) correctSym = '<';
+  else                     correctSym = '=';
+
+  const correct = (selectedSym === correctSym);
+
+  // Disable all sym buttons
+  ['symGT','symEQ','symLT'].forEach(id => {
+    document.getElementById(id).disabled = true;
+    document.getElementById(id).style.opacity = '0.5';
+  });
+  document.getElementById('confirmBtn').disabled = true;
+  document.getElementById('clearBtn').disabled   = true;
+
+  // Color the slot
+  const slot = document.getElementById('symSlot');
+  slot.style.borderColor  = correct ? 'var(--accent3)' : 'var(--accent2)';
+  slot.style.background   = correct ? '#0d3d1e' : '#3d0d1e';
+
+  if (correct) { score++; SFX.correct(); }
+  else         { SFX.wrong(); slot.classList.add('shake'); }
+
+  const correctLine = `${leftN} ${correctSym} ${rightN}`;
+  showFeedback(correct,
+    `ถูกต้อง! 🌟<br><span style="font-size:13px">${correctLine}</span>`,
+    `เฉลย: <span style="font-size:16px">${correctLine}</span>`,
+    nextQuestion
+  );
+}
+
+function nextQuestion() {
+  currentQ++;
+  document.getElementById('scoreDisplay').textContent = score;
+
+  if (currentQ >= TOTAL_Q) {
+    showResult(3, score, TOTAL_Q);
+  } else {
+    buildQuestion();
+  }
+}
+
+buildQuestion();
+</script>
+</body>
+</html>
