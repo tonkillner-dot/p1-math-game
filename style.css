@@ -543,3 +543,14 @@ input:checked + .slider:before {
         height: 210px;
     }
 }
+
+/* --- เครดิตผู้สร้าง --- */
+.creator-credit {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 13px;
+    color: #888;
+    border-top: 1px dashed rgba(255, 255, 255, 0.15);
+    padding-top: 12px;
+    font-family: var(--font-thai);
+}
