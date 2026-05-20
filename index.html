@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Math: ผจญภัยส่วนย่อย-ส่วนรวม ป.1</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- เอฟเฟกต์หน้าจอเกมเรโทร CRT -->
+    <div class="crt-overlay"></div>
+
+    <div class="game-container">
+        <!-- ================= เมนูหลัก (MAIN MENU) ================= -->
+        <div id="menu-screen" class="screen active">
+            <h1>PIXEL MATH<br><span style="font-size: 14px; color: var(--neon-blue);">ผจญภัยส่วนย่อย - ส่วนรวม</span></h1>
+            
+            <div class="menu-layout">
+                <!-- มาสคอตสไลม์สไตล์ 8-bit เคลื่อนไหวได้ -->
+                <div class="pixel-art-banner">
+                    <svg viewBox="0 0 16 16" width="100%" height="100%">
+                        <!-- เงาสไลม์ -->
+                        <path d="M4 14h8v1H4v-1z" fill="#000" opacity="0.3"/>
+                        <!-- ตัวสไลม์สีม่วง -->
+                        <path d="M4 2h8v2H4V2zm-2 2h12v2H2V4zm-1 2h14v6H1V6zm1 6h12v2H2v-2zm2 2h8v2H4v-2z" fill="#9d4edd"/>
+                        <!-- ตา -->
+                        <path d="M4 6h2v2H4V6zm6 0h2v2h-2V6z" fill="#00f0ff"/>
+                        <path d="M5 7h1v1H5V7zm6 0h1v1h-1V7z" fill="#fff"/>
+                        <!-- แก้มแก้มสีชมพู -->
+                        <path d="M2 9h2v1H2V9zm10 0h2v1h-2V9z" fill="#ff0080"/>
+                        <!-- ปาก -->
+                        <path d="M7 10h2v1H7v-1z" fill="#fff01f"/>
+                    </svg>
+                </div>
+
+                <div style="margin: 10px 0;">
+                    <h2>คะแนนสูงสุด: <span id="menu-highscore-val" style="color:var(--neon-green)">0</span> คะแนน</h2>
+                </div>
+
+                <!-- การตั้งค่าเว็บแคมและเสียง -->
+                <div class="settings-row">
+                    <span>ใช้การกวักมือผ่านกล้อง (Webcam Mode)</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="webcam-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <!-- การเลือกโหมดและระดับความยาก -->
+                <div class="menu-buttons">
+                    <h3 style="color:var(--neon-blue); margin-bottom:10px;">เลือกโหมดการเล่น:</h3>
+                    
+                    <!-- ระดับ 1: ไม่เกิน 5 -->
+                    <div style="margin-bottom: 12px;">
+                        <span style="font-size: 14px; color: var(--neon-yellow);">ระดับ 1 (ผลรวมไม่เกิน 5)</span><br>
+                        <button class="btn-pixel" onclick="game.startGame(1, 'PARTS')">แยกส่วนย่อย</button>
+                        <button class="btn-pixel" onclick="game.startGame(1, 'WHOLE')">รวมเป็นส่วนรวม</button>
+                    </div>
+
+                    <!-- ระดับ 2: ไม่เกิน 10 -->
+                    <div style="margin-bottom: 12px;">
+                        <span style="font-size: 14px; color: var(--neon-green);">ระดับ 2 (ผลรวมไม่เกิน 10)</span><br>
+                        <button class="btn-pixel" onclick="game.startGame(2, 'PARTS')">แยกส่วนย่อย</button>
+                        <button class="btn-pixel" onclick="game.startGame(2, 'WHOLE')">รวมเป็นส่วนรวม</button>
+                    </div>
+
+                    <!-- ระดับ 3: ไม่เกิน 20 -->
+                    <div style="margin-bottom: 5px;">
+                        <span style="font-size: 14px; color: var(--neon-pink);">ระดับ 3 (ผลรวมไม่เกิน 20)</span><br>
+                        <button class="btn-pixel" onclick="game.startGame(3, 'PARTS')">แยกส่วนย่อย</button>
+                        <button class="btn-pixel" onclick="game.startGame(3, 'WHOLE')">รวมเป็นส่วนรวม</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= หน้าจอหลักขณะเล่นเกม (GAME SCREEN) ================= -->
+        <div id="game-screen" class="screen">
+            <div class="game-header">
+                <button class="btn-pixel btn-danger" onclick="game.goHome()" style="padding: 6px 12px; font-size:10px; margin:0;">ออก</button>
+                <div class="score-display">คะแนน: <span id="score-val" style="color: var(--neon-green)">0</span></div>
+                <div class="level-display">ระดับ: <span id="level-badge" class="level-badge">1</span></div>
+                <div class="level-display">ข้อที่: <span id="round-badge" class="level-badge">1/5</span></div>
+            </div>
+
+            <!-- ข้อแนะนำคำถามผู้เรียน -->
+            <div class="instruction-box">
+                <p id="instruction-text" class="instruction-text">กำลังโหลดโจทย์...</p>
+            </div>
+
+            <!-- โซนเว็บแคมแสดงผลควบคุม (จะถูกซ่อนถ้าไม่ได้ติ๊กสวิตช์กล้อง) -->
+            <div id="webcam-panel" class="webcam-panel" style="display: none;">
+                <div class="webcam-wrapper">
+                    <!-- แท็กสตรีมเว็บแคมแบบซ่อนเพื่อประมวลผลพิกเซลเบื้องหลัง -->
+                    <video id="webcam-video" class="webcam-video" autoplay playsinline muted></video>
+                    <!-- แคนวาสที่ใช้วาดภาพกลับด้านพร้อมไฮไลต์ตำแหน่งควบคุมความเคลื่อนไหว -->
+                    <canvas id="webcam-canvas" class="webcam-canvas"></canvas>
+                </div>
+                <p style="font-size: 12px; color:#888; margin-top: 6px; text-align: center;">
+                    💡 ใบ้มือโบกในกรอบเพื่อเปลี่ยนเลข หรือใช้ปุ่ม + และ - ด้านล่างช่วยเสริมได้จ้า
+                </p>
+            </div>
+
+            <!-- บอร์ดส่วนย่อย-ส่วนรวม (Math Board) -->
+            <div class="math-board" id="math-board-area">
+                <!-- เส้นความสัมพันธ์ทางคณิตศาสตร์เชื่อมโยงระหว่างกล่อง -->
+                <svg id="relation-lines-svg" class="relation-lines"></svg>
+
+                <!-- วงกลมบน: ส่วนรวม (Whole) -->
+                <div id="node-whole" class="node whole-container">
+                    <span class="node-label">ส่วนรวม</span>
+                    <!-- คอนเทนเนอร์แสดงจำนวนสไลม์ย่อยสำหรับนับ -->
+                    <div class="visual-count"></div>
+                    <div class="node-number">0</div>
+                    <!-- แผงควบคุมกรณีใช้มือสัมผัส/เมาส์คลิก -->
+                    <div class="counter-controls" id="controls-whole">
+                        <button class="btn-mini-pixel" onclick="game.adjustWholeValue(-1)">-</button>
+                        <button class="btn-mini-pixel" onclick="game.adjustWholeValue(1)">+</button>
+                    </div>
+                </div>
+
+                <!-- แถวล่าง: ส่วนย่อย (Parts) -->
+                <div class="parts-row">
+                    <!-- ส่วนย่อย A -->
+                    <div id="node-part-a" class="node part-container">
+                        <span class="node-label" style="color:var(--neon-green);">ส่วนย่อย A</span>
+                        <div class="visual-count"></div>
+                        <div class="node-number" style="color:var(--neon-green);">0</div>
+                        <div class="counter-controls" id="controls-part-a">
+                            <button class="btn-mini-pixel" onclick="game.adjustPartValue('A', -1)">-</button>
+                            <button class="btn-mini-pixel" onclick="game.adjustPartValue('A', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <!-- ส่วนย่อย B -->
+                    <div id="node-part-b" class="node part-container">
+                        <span class="node-label" style="color:var(--neon-blue);">ส่วนย่อย B</span>
+                        <div class="visual-count"></div>
+                        <div class="node-number" style="color:var(--neon-blue);">0</div>
+                        <div class="counter-controls" id="controls-part-b">
+                            <button class="btn-mini-pixel" onclick="game.adjustPartValue('B', -1)">-</button>
+                            <button class="btn-mini-pixel" onclick="game.adjustPartValue('B', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- กล่องแสดงข้อความผลการตรวจสอบคำตอบ -->
+            <div id="feedback-box" class="feedback-box"></div>
+
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn-pixel btn-success" id="btn-submit-answer" onclick="game.checkAnswer()" style="font-size:16px;">
+                    ตรวจคำตอบ
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= สรุปผลเกม (SUMMARY SCREEN) ================= -->
+        <div id="summary-screen" class="screen">
+            <h1>เย้! จบด่านผจญภัยแล้ว</h1>
+            
+            <div style="text-align: center; margin: 20px 0;">
+                <!-- ตารางแสดงผลสรุปเกรดตามมาตรฐานประเมินผล -->
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2">บันทึกผลคะแนนของนักเรียน</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summary-table-body">
+                        <!-- ถูกเติมอัตโนมัติจาก game.js -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="text-align: center; margin-top: 25px;">
+                <button class="btn-pixel" onclick="game.startGame(game.level, game.currentMode)">เล่นอีกครั้ง</button>
+                <button class="btn-pixel btn-danger" onclick="game.goHome()">หน้าแรก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ลิงก์สคริปต์ทำงาน -->
+    <script src="audio.js"></script>
+    <script src="motion.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
